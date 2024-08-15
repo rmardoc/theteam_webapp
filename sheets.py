@@ -5,6 +5,37 @@ from streamlit_extras.stylable_container import stylable_container
 from chat import add_message
 
 
+@st.dialog("Character deletion")
+def confirm_PGdeletion(room, pgname):
+    st.write(f"Deleting Character {pgname} from room {room}. Character data will be lost")
+    if st.button("Confirm deletion"):
+        with server_state_lock["rooms"]:
+            del server_state["rooms"][room]["pg"][pgname]
+        st.rerun()
+
+@st.dialog("Add Character")
+def confirm_PGadd(room):
+    def addPG():
+        with server_state_lock["rooms"]:
+            server_state["rooms"][room]["pg"][st.session_state.new_PG_name] = { }
+    if st.text_input("Create new Character:", key="new_PG_name", placeholder="Name", on_change=addPG):
+        st.rerun()
+
+@st.dialog("Rename Character")
+def confirm_PGrename(room,pgname):
+    def renamePG():
+        rename_newPGname = st.session_state.rename_new_PG_name
+        pglist = server_state["rooms"][room]["pg"].keys()
+        if (rename_newPGname == pgname) or (rename_newPGname in pglist):
+            st.error(f"Invalid name. The name {rename_newPGname} is already present") 
+            st.stop()
+            st.rerun()
+        else:
+            with server_state_lock["rooms"]:
+                server_state["rooms"][room]["pg"][rename_newPGname] = server_state["rooms"][room]["pg"][pgname]
+                server_state["rooms"][room]["pg"].pop(pgname)
+    if st.text_input(f"Renaming Character {pgname} in room {room}:", key="rename_new_PG_name", placeholder="New Character name", on_change=renamePG):
+        st.rerun()
 
 
 def create_container_with_color(id, color="#E4F2EC"):
@@ -114,59 +145,26 @@ def render_diceroller(room, pgname):
                 add_message(room=room,message_packet={ "nickname": st.session_state.nickname, 
                                                        "text": f"**{pgname}** rolled {result} ; Dices: {resdices_str}" }
                     )
-                
-    
-
-def sheets(room):
-    #room_key = f"room_{room}"
-    #TODO inserire lista dei PG come tabs
-
-    with st.container(border=True):
-        @st.dialog("PG deletion")
-        def confirm_PGdeletion(pgname):
-            st.write(f"Deleting PC {pgname}. Character's data will be lost")
-            if st.button("Confirm deletion"):
-                with server_state_lock["rooms"]:
-                    if pgname in server_state["rooms"][room]["pg"]:
-                        del server_state["rooms"][room]["pg"][pgname]
-                st.rerun()
-
-        pclist_col1, pclist_col2 = st.columns([5,5])
-        with pclist_col1:
-            pglist = server_state["rooms"][room]["pg"].keys()
-            if not pglist:
-                st.write("No PCs available, create one.") 
-                pgname = ""
-            else: 
-                pgname = st.radio("Select Character", pglist)
-                #if st.button("Delete selected Character",use_container_width=True):
-                #    confirm_PGdeletion(pgname)
-        with pclist_col2:
-            if pglist : 
-                if st.button("Delete selected Character",use_container_width=True):
-                    confirm_PGdeletion(pgname)
-            with st.form("CreatePG", border=False):
-                def on_create():
-                    new_pgname = st.session_state.new_pgname
-                    if new_pgname :
-                        with server_state_lock["rooms"]:
-                            server_state["rooms"][room]["pg"][ new_pgname ] = {}
-                newpg_col1 , newpg_col2, = st.columns([2,3])
-                with newpg_col1:
-                    st.text_input("Name", label_visibility="collapsed", placeholder="Name", key="new_pgname")
-                with newpg_col2:
-                    st.form_submit_button("Create new Character", on_click=on_create)
 
 
-    if pgname:
-        render_sheet(room=room, pgname=pgname)
-    
-    with create_container_with_color(id= "testcolored"):
-            st.checkbox("coloredcheckbox", key="coloredcheckbox")
+
+
+
+
+
+
+sheet_helpmessage="""
+   - **Box bianchi:** Riempi i box grigi e checkbox bianchi per compilare la scheda. 
+     Rimarranno salvati sul tuo PG in questa stanza fino al riavvio del server.
+   - **Box rossi:** Selezionali quando componi la pool per il tiro di dado.
+     (vedrai che la pool si comporrà in automatico).
+     Clicca sul pulsante "Tira i dadi" quando sei pronto/a.
+     Il risultato comparirà anche in chat. """
 
 
 
 def render_sheet(room, pgname):
+
     def gettraitvalue(traitkey):
         try: 
             traitvalue = server_state["rooms"][room]["pg"][pgname][traitkey]
@@ -176,11 +174,13 @@ def render_sheet(room, pgname):
     
     def updatetraitvalue():
         for traitkey in st.session_state:
-            if traitkey.startswith("trait"):
+            if traitkey.startswith("trait") or traitkey.startswith("bet"):
                 with server_state_lock["rooms"]:
                     server_state["rooms"][room]["pg"][pgname][traitkey] = st.session_state[traitkey]
 
-    st.title(f"Scheda {pgname}")
+
+
+    st.title(f"Scheda {pgname}", help=sheet_helpmessage)
 
     col1, col2, col3, col4 , col5= st.columns([50,2, 60,2,40])
 
@@ -201,7 +201,8 @@ def render_sheet(room, pgname):
                     }
                     """,
             ):
-                st.checkbox("+1d6", label_visibility="visible", key="bet_trait", help="+1d6 al tiro (se smarchi un utilizzo o spendi 1 Jolly)")
+                st.checkbox("+1d6", label_visibility="visible", key="bet_trait", help="+1d6 al tiro (se smarchi un utilizzo o spendi 1 Jolly)",
+                            value= gettraitvalue(f"bet_trait") , on_change= updatetraitvalue)
         for i in range(6):
             
             col1_1, col1_2, col1_3 = st.columns([8,1,1])
@@ -236,7 +237,8 @@ def render_sheet(room, pgname):
                     }
                     """,
             ):
-                st.checkbox("+1d6", label_visibility="visible", key="bet_resource", help="+1d6 al tiro (se smarchi un utilizzo)")
+                st.checkbox("+1d6", label_visibility="visible", key="bet_resource", help="+1d6 al tiro (se smarchi un utilizzo)",
+                            value= gettraitvalue(f"bet_resource") , on_change= updatetraitvalue)
         for i in range(6):
             col2_1, col2_2, col2_3, col2_4 , col2_5 = st.columns([7,1,1,1,1])
             with col2_1:
@@ -276,7 +278,8 @@ def render_sheet(room, pgname):
                     }
                     """,
             ):
-                st.checkbox("+1d6 ", label_visibility="visible", key="bet_risk", help="+1d6 al tiro (ma se fallisci subisci 1 Ferita)")
+                st.checkbox("+1d6 ", label_visibility="visible", key="bet_risk", help="+1d6 al tiro (ma se fallisci subisci 1 Ferita)",
+                            value= gettraitvalue(f"bet_risk") , on_change= updatetraitvalue)
 
         st.subheader("Ferite")
         col5b_1 , col5b_2 = st.columns([2,9])
@@ -294,7 +297,8 @@ def render_sheet(room, pgname):
                     }
                     """,
             ):
-                st.checkbox("-2 ", label_visibility="visible", key="bet_wound", help="-2 al tiro (ma se hai successo cancelli 1 Ferita)")
+                st.checkbox("-2 ", label_visibility="visible", key="bet_wound", help="-2 al tiro (ma se hai successo cancelli 1 Ferita)",
+                            value= gettraitvalue(f"bet_wound") , on_change= updatetraitvalue)
         for i in range(3):
             col3b_1, col3b_2 = st.columns([9,1])
             with col3b_1: 
@@ -370,11 +374,78 @@ def render_sheet(room, pgname):
                           value= gettraitvalue(f"trait_jolly") , on_change= updatetraitvalue)
 
 
+    # https://www.restack.io/docs/streamlit-knowledge-streamlit-column-background-color
+    
+
+    with st.expander("Notes"):
+        st.text_area("Note",key=f"trait_note" , label_visibility="collapsed",
+                 value= gettraitvalue(f"trait_note") , on_change= updatetraitvalue)
+
     render_diceroller(room=room, pgname=pgname)
 
 
-    # https://www.restack.io/docs/streamlit-knowledge-streamlit-column-background-color
+
+def sheets(room):
+
+    with st.container(border=True):
+        #@st.dialog("PG deletion")
+        #def confirm_PGdeletion(pgname):
+        #    st.write(f"Deleting PC {pgname}. Character's data will be lost")
+        #    if st.button("Confirm deletion"):
+        #        with server_state_lock["rooms"]:
+        #            if pgname in server_state["rooms"][room]["pg"]:
+        #                del server_state["rooms"][room]["pg"][pgname]
+        #        st.rerun()
+
+ 
+
+
+        pclist_col1, pclist_col2 , pclist_col3, pclist_col4 = st.columns([55,15,15,15])
+        with pclist_col1:
+            pglist = server_state["rooms"][room]["pg"].keys()
+            if not pglist:
+                st.write("No PCs available, create one.") 
+                pgname = ""
+            else: 
+                pgname = st.radio("Select Character", pglist)
+
+        with pclist_col2:
+            #if pglist : 
+            #    if st.button("Delete selected Character",use_container_width=True):
+            #        confirm_PGdeletion(pgname)
+            #with st.form("CreatePG", border=False):
+            #    def on_create():
+            #        new_pgname = st.session_state.new_pgname
+            #        if new_pgname :
+            #            with server_state_lock["rooms"]:
+            #                server_state["rooms"][room]["pg"][ new_pgname ] = {}
+            #    newpg_col1 , newpg_col2, = st.columns([2,3])
+            #    with newpg_col1:
+            #        st.text_input("Name", label_visibility="collapsed", placeholder="Name", key="new_pgname")
+            #    with newpg_col2:
+            #        st.form_submit_button("Create new Character", on_click=on_create)
+            if st.button(":material/person_add: \n\nAdd ", help= "Add new Character", use_container_width=True):
+                confirm_PGadd(room)    
+        with pclist_col3:
+            if st.button(":material/person_cancel: \n\nDelete",help="Delete selected Character", use_container_width=True,disabled= not pglist):
+                confirm_PGdeletion(room,pgname)
+        with pclist_col4:
+            if st.button(":material/person_edit: \n\nRename",help="Rename selected Character", use_container_width=True, disabled= not pglist):
+                confirm_PGrename(room,pgname)
+
+
+
+
+    if pgname:
+        render_sheet(room=room, pgname=pgname)
     
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_server_state import server_state, server_state_lock
-#from streamlit_extras.stylable_container import stylable_container
+from streamlit_extras.stylable_container import stylable_container
 
 
 def add_message(room, message_packet):
@@ -81,7 +81,20 @@ def chat(room, nickname):
     
     
     ## mainframe show chat
-    st.title("Chat:")
+    with stylable_container(
+            key="container_with_nouppermargin",
+            css_styles="""
+                {
+                    text-align: left;
+                    line-height: 1;
+                    margin-top: -25px;
+                    margin-bottom: -85px;
+                    padding-left: 5px;
+                    border-radius: 10px
+                }
+                """,
+        ):
+        st.markdown("Chat:")
     with st.container(height=300):
         with st.form("chatmessage", clear_on_submit=True, border=False):
             chat_col1 , chat_col2, = st.columns([8,1])
