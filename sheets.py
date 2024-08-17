@@ -29,7 +29,6 @@ def confirm_PGrename(room,pgname):
         if (rename_newPGname == pgname) or (rename_newPGname in pglist):
             st.error(f"Invalid name. The name {rename_newPGname} is already present") 
             st.stop()
-            st.rerun()
         else:
             with server_state_lock["rooms"]:
                 server_state["rooms"][room]["pg"][rename_newPGname] = server_state["rooms"][room]["pg"][pgname]

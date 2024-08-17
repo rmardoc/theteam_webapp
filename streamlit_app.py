@@ -24,13 +24,22 @@ def confirm_roomdeletion(room):
             del server_state["rooms"][room]
         st.rerun()
 
-@st.dialog("Add Room")
+@st.dialog("Create a New Room")
 def confirm_roomadd():
-    def addroom():
+    def addroom(room_data):
         with server_state_lock["rooms"]:
-            server_state["rooms"][st.session_state.new_room_name] = { 'messages': [] , 'pg': {} }
-    if st.text_input("Create new room:", key="new_room_name", placeholder="room name", on_change=addroom):
+            server_state["rooms"][st.session_state.new_room_name] = room_data
+        #st.rerun()
+    uploaded_file = st.file_uploader("**[OPTIONAL]** Re-upload room (from JSON file) ", accept_multiple_files=False,type="json")
+    #st.markdown("To create a new empty room just name it")
+    if uploaded_file is not None:
+        room_data = json.load(uploaded_file)
+    else: 
+        room_data= { 'messages': [] , 'pg': {} }
+    if st.text_input("New room name: ", key="new_room_name", placeholder="room name", 
+                  on_change=addroom , kwargs=dict(room_data=room_data)):
         st.rerun()
+
 
 @st.dialog("Rename Room")
 def confirm_roomrename(room):
@@ -118,12 +127,25 @@ def main():
             if st.button(":material/add_box: \n\n Add ", help= "Add new room", use_container_width=True):
                 confirm_roomadd()    
         with mngroom_col2:
-            if st.button(":material/delete: Delete",help="Delete selected room", use_container_width=True):
+            if st.button(":material/delete: Delete",help="Delete selected room", use_container_width=True, disabled=not rooms):
                 confirm_roomdeletion(room)
         with mngroom_col3:
-            if st.button(":material/replay: Rename",help="Rename selected room", use_container_width=True):
+            if st.button(":material/replay: Rename",help="Rename selected room", use_container_width=True, disabled=not rooms):
                 confirm_roomrename(room)
-
+        #mngroom_col1b, mngroom_col2b = st.sidebar.columns([5,5])
+        #with mngroom_col1b:
+        if rooms:
+            downloadjson_helpmsg='''
+                Download selected room.  
+                Rooms will be automatically removed from  
+                the website when server reboots after few  
+                days of inactivity. Download your room so  
+                you can reupload it later.
+                '''
+            st.sidebar.download_button(":material/download: Download room", use_container_width=True,
+                              help=downloadjson_helpmsg, 
+                              file_name=f"theteam-rpg_room_{room}.json",mime="application/json", 
+                              data=json.dumps(server_state["rooms"][room]))
 
    
             
