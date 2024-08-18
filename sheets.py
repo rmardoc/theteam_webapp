@@ -3,7 +3,8 @@ import random
 from streamlit_server_state import server_state, server_state_lock
 from streamlit_extras.stylable_container import stylable_container
 from chat import add_message
-
+#from io import StringIO
+import base64
 
 @st.dialog("Character deletion")
 def confirm_PGdeletion(room, pgname):
@@ -36,9 +37,21 @@ def confirm_PGrename(room,pgname):
     if st.text_input(f"Renaming Character {pgname} in room {room}:", key="rename_new_PG_name", placeholder="New Character name", on_change=renamePG):
         st.rerun()
 
+@st.dialog("Upload Character Image")
+def confirm_PGimage(room,pgname):
+    def uploadPGimage(inputimage):
+        with server_state_lock["rooms"]:
+            server_state["rooms"][room]["pg"][pgname]["trait_pgimage"] = inputimage
+        st.rerun()
+    uploaded_image = st.file_uploader("Upload image",type=['png','jpg'],accept_multiple_files=False)
+    if uploaded_image:
+        stringio_image = base64.b64encode(uploaded_image.read()).decode()
+        uploadPGimage(stringio_image)
+
+
+        
 
 def create_container_with_color(id, color="#E4F2EC"):
-    #stw(id)
     # todo: instead of color you can send in any css
     plh = st.container()
     html_code = """<div id = 'my_div_outer'></div>"""
@@ -154,7 +167,10 @@ def render_diceroller(room, pgname):
 
 sheet_helpmessage="""
    - **Box bianchi:** Riempi i box grigi e checkbox bianchi per compilare la scheda. 
-     Rimarranno salvati sul tuo PG in questa stanza fino al riavvio del server.
+     Rimarranno salvati sul tuo PG in questa stanza per qualche giorno, fino al 
+     riavvio del server (vedi "Download room" sulla sinistra)  
+     **Creazione**: Inizi l'avventura con 6 Tratti (con un utilizzo ciascuno), 
+     1 Risorsa con 2 utilizzi, e 1 Obiettivo. Inizi ogni sessione con 3 Jolly.
    - **Box rossi:** Selezionali quando componi la pool per il tiro di dado.
      (vedrai che la pool si comporrà in automatico).
      Clicca sul pulsante "Tira i dadi" quando sei pronto/a.
@@ -178,13 +194,36 @@ def render_sheet(room, pgname):
                     server_state["rooms"][room]["pg"][pgname][traitkey] = st.session_state[traitkey]
 
 
+    pgname_col1, pgname_col2 = st.columns([70,30])
+    with pgname_col1:
+        st.markdown(f"### Scheda {pgname}", help=sheet_helpmessage)
+            
+        pgname_col1_2a, pgname_col1_2b = st.columns([2,8], vertical_alignment="center")
+        with pgname_col1_2a: 
+            st.markdown("Concept:")
+        with pgname_col1_2b:
+            st.text_input(f"Concept:", key=f"trait_concept", label_visibility="collapsed", 
+                                      value= gettraitvalue(f"trait_concept"),
+                                      on_change= updatetraitvalue )
+        
+    with pgname_col2:
+        pgname_col2_1a, pgname_col2_1b = st.columns([65,35])
+        with pgname_col2_1a: 
+            if "trait_pgimage" in server_state["rooms"][room]["pg"][pgname]:
+                pgimage = server_state["rooms"][room]["pg"][pgname]["trait_pgimage"]
+                #st.image(server_state["rooms"][room]["pg"][pgname]["pgimage"], width=220 )
+                st.markdown(f"""<img src="data:png;base64,{pgimage}" width='120' height='120' VSPACE="1">""", unsafe_allow_html=True)
+            else: 
+                pass
+        with pgname_col2_1b: 
+            if st.button(":material/add_photo_alternate: ", help="Upload an image "):
+                confirm_PGimage(room,pgname)
 
-    st.title(f"Scheda {pgname}", help=sheet_helpmessage)
-
-    col1, col2, col3, col4 , col5= st.columns([50,2, 60,2,40])
+    st.markdown(" ")
+    col1, col2, col3, col4 , col5= st.columns([51,2, 60,2,39])
 
     with col1:
-        col1a_1, col1a_2 = st.columns([5,5], vertical_alignment="center")
+        col1a_1, col1a_2 = st.columns([48,52], vertical_alignment="center")
         with col1a_1:
             st.markdown("### Tratti")
         with col1a_2:
@@ -387,16 +426,6 @@ def render_sheet(room, pgname):
 def sheets(room):
 
     with st.container(border=True):
-        #@st.dialog("PG deletion")
-        #def confirm_PGdeletion(pgname):
-        #    st.write(f"Deleting PC {pgname}. Character's data will be lost")
-        #    if st.button("Confirm deletion"):
-        #        with server_state_lock["rooms"]:
-        #            if pgname in server_state["rooms"][room]["pg"]:
-        #                del server_state["rooms"][room]["pg"][pgname]
-        #        st.rerun()
-
- 
 
 
         pclist_col1, pclist_col2 , pclist_col3, pclist_col4 = st.columns([55,15,15,15])
@@ -409,20 +438,6 @@ def sheets(room):
                 pgname = st.radio("Select Character", pglist)
 
         with pclist_col2:
-            #if pglist : 
-            #    if st.button("Delete selected Character",use_container_width=True):
-            #        confirm_PGdeletion(pgname)
-            #with st.form("CreatePG", border=False):
-            #    def on_create():
-            #        new_pgname = st.session_state.new_pgname
-            #        if new_pgname :
-            #            with server_state_lock["rooms"]:
-            #                server_state["rooms"][room]["pg"][ new_pgname ] = {}
-            #    newpg_col1 , newpg_col2, = st.columns([2,3])
-            #    with newpg_col1:
-            #        st.text_input("Name", label_visibility="collapsed", placeholder="Name", key="new_pgname")
-            #    with newpg_col2:
-            #        st.form_submit_button("Create new Character", on_click=on_create)
             if st.button(":material/person_add: \n\nAdd ", help= "Add new Character", use_container_width=True):
                 confirm_PGadd(room)    
         with pclist_col3:
