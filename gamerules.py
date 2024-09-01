@@ -39,10 +39,10 @@ def gamerules():
     rules_column1b = """ 
         ##### GIOCATORE:
         Tiri: 1d10 [+1d6 per Tratti] [+1d6 per Risorse]
-        [+1d6 per Rischiare] [-2 per Ferite (vedi 'Stringi i denti')]  
+        [+2d6 per Rischiare] [-2 per Ferite (vedi 'Stringi i denti')]  
         I dadi esplodono, scegli il migliore.
         
-        Difficoltà: da 7 a 12  
+        Difficoltà: da 7 a 11
         Risultato: Diff = 1 Successo; Diff + 5 = 2 Successi.
         
         - **Azione di Affrontare:**  
@@ -61,9 +61,9 @@ def gamerules():
         
         ##### RIPOSO:
         Una volta al giorno, in un Momento Tranquillo decidi se spendere:
-        - 1 PX - **Riposare:** riposa per qualche ora, ripristini tutti gli usi dei Tratti
-        - 3 PX - **Curare:** 1 Ferita di un alleato.
+        - 0 PX - **Riposare:** riposa per qualche ora, ripristini tutti gli usi dei Tratti
         - 1 PX - **Attrezzarsi:** otteni due slot di Risorse (max 6) se il GM approva.
+        - 2 PX - **Curare:** 1 Ferita di un alleato.
         - 1 PX - **Cambiare:** sostituisci un Tratto.
         - 6 PX - **Migliorare:** +1 uso di 1 Tratto (max 2)
         - 0 PX - **Legare:** Fai una domanda ad un alleato e ascolti la risposta,

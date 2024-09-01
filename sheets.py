@@ -118,9 +118,12 @@ def render_diceroller(room, pgname):
         poolstr="(1d10!"
         d6s=0
         woundbet=False
-        for elem in ["bet_trait", "bet_resource", "bet_risk"]:
+        for elem in ["bet_trait", "bet_resource"]:
             if st.session_state[elem]:
                 d6s+=1
+        for elem in ["bet_risk"]:
+            if st.session_state[elem]:
+                d6s+=2
         if d6s >0:
             poolstr+=f" , {d6s}d6! "
         if st.session_state["bet_wound"]:
@@ -316,7 +319,7 @@ def render_sheet(room, pgname):
                     }
                     """,
             ):
-                st.checkbox("+1d6 ", label_visibility="visible", key="bet_risk", help="+1d6 al tiro (ma se fallisci subisci 1 Ferita)",
+                st.checkbox("+2d6 ", label_visibility="visible", key="bet_risk", help="+2d6 al tiro (ma se fallisci subisci 1 Ferita)",
                             value= gettraitvalue(f"bet_risk") , on_change= updatetraitvalue)
 
         st.subheader("Ferite")
