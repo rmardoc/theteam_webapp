@@ -38,12 +38,13 @@ def gamerules():
         """
     rules_column1b = """ 
         ##### GIOCATORE:
-        Tiri: 1d10 [+1d6 per Tratti] [+1d6 per Risorse]
-        [+2d6 per Rischiare] [-2 per Ferite (vedi 'Stringi i denti')]  
-        I dadi esplodono, scegli il migliore.
-        
-        Difficoltà: da 7 a 11
-        Risultato: Diff = 1 Successo; Diff + 5 = 2 Successi.
+        Tiri: [+1d10 per Tratti] [+1d10 per Risorse] 
+          [+1d10 per Rischiare] [-2 per 'Stringi i denti']
+          Scegli il risultato migliore.
+
+         Rischiare: +1d10, se hai successo +1 Jolly, se fallisci subisci 1 Ferita.
+         Stringi i denti: -2 al tiro, se hai successo cancelli la Ferita.
+         Risultato: 8 = 1 Successo; 10 = 2 Successi.
         
         - **Azione di Affrontare:**  
           1° Successo = infliggi 1 Danno o smarca 1 SlotImpresa  
@@ -98,12 +99,12 @@ def gamerules():
 
         ##### LEGAMI:
         Smarca uno e prendi il controllo di quell'Alleato per un'azione come se
-        avesse speso un Tratto ed una Risorsa (quindi +2d6). Se l'altro
+        avesse speso un Tratto ed una Risorsa (quindi +2d10). Se l'altro
         Giocatore approva l'azione, entrambi ottenete +1 Jolly
         
         ##### FINE SESSIONE:
         - **Esperienza:** Ottieni 1 PX , +1PX per ogni risposta positiva:
-          1. Hai messo in luce il tuo Tratto Primario o il tuo Obiettivo?
+          1. Hai messo in luce il tuo Obiettivo?
           2. Ti sei messo in pericolo per il bene del Team?
           3. E' cambiato il tuo rapporto con un alleato? Come?
         - **Chi sei per noi:** Assegna un Tratto ad un alleato (che lo sostituisce ad

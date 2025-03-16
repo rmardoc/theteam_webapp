@@ -73,65 +73,54 @@ def create_container_with_color(id, color="#E4F2EC"):
     st.markdown(chat_plh_style, unsafe_allow_html=True)
     return plh
 
-def theteamdiceroller(d6s,woundbet):
-    def expldice(dice):
-        somma=0
-        results=[]
-        while True:
-            res = random.randint(1,dice)
-            somma=somma+res
-            results.append(res)
-            if res != dice : break
-        return somma,results
-    def getbestres(lista):
-        bestres=0
-        lista_summed = [ sum(sublist)  for sublist in lista]
-        for elem in lista_summed:
-            if ( elem > bestres): 
-                bestres = elem
-        return bestres
+def theteamdiceroller(d10s,woundbet):
+    def rolldices(dicesize,dicenumber):
+        """
+        result lists of rolling 'dicenumber' dices of size 'dicesize'
+        es: rolldices(10,3) = [4,2,10]
+        """
+        reslist = []
+        for elem in range(dicenumber):
+            res = random.randint(1,dicesize)
+            reslist.append( res )
+        return reslist
 
-    globalsum=0
-    globalresults=[]
-    somma , results = expldice(10)
-    globalsum += somma
-    globalresults.append(results)
+    if d10s > 0 : 
+        reslist = rolldices(dicesize=10,dicenumber=d10s)
+        bestres = max(reslist)
+        reslist_str = f"{reslist}"
+    else: 
+        reslist = rolldices(dicesize=10,dicenumber=2)
+        bestres = min(reslist)
+        reslist_str = f"{reslist}"
 
-    for elem in range(d6s): 
-        somma, results = expldice(6)
-        globalsum += somma
-        globalresults.append(results)
-    
-    #st.write(f"globalresults: {globalresults}")
-    globalresults_str = f"{globalresults}"
-    globalbestres = getbestres(globalresults)
-    if woundbet:
-        globalsum = globalsum -2 
-        globalresults_str+=" -2"
-        globalbestres = globalbestres -2 
-    return globalbestres, globalresults_str
+    if woundbet: 
+        bestres = bestres -2 
+        reslist_str += " -2"
+
+    return bestres, reslist_str
+
+
 
 
 
 def render_diceroller(room, pgname):
     def get_pool():
-        poolstr="(1d10!"
-        d6s=0
+        d10s=0
         woundbet=False
         for elem in ["bet_trait", "bet_resource"]:
             if st.session_state[elem]:
-                d6s+=1
+                d10s+=1
         for elem in ["bet_risk"]:
             if st.session_state[elem]:
-                d6s+=2
-        if d6s >0:
-            poolstr+=f" , {d6s}d6! "
+                d10s+=1
+        poolstr=f"( {d10s}d10 "
         if st.session_state["bet_wound"]:
             woundbet=True
             poolstr+=")K - 2"
         else: 
             poolstr+=")K"
-        return poolstr,d6s,woundbet
+        return poolstr,d10s,woundbet
     
     
     with stylable_container(
@@ -152,10 +141,10 @@ def render_diceroller(room, pgname):
         with dicerol_col1:
             tiradado = st.button("Tira i dadi")
         with dicerol_col2:
-            poolstr, d6s, woundbet = get_pool()
+            poolstr, d10s, woundbet = get_pool()
             st.markdown(f"Stai tirando {poolstr}")
             if tiradado:
-                result, resdices_str = theteamdiceroller(d6s=d6s, woundbet=woundbet) 
+                result, resdices_str = theteamdiceroller(d10s=d10s, woundbet=woundbet) 
                 st.markdown(f"**Risultato:**  :arrow_forward: :orange-background[{result}]  :arrow_backward: ; **Dadi:** {resdices_str}")
                 add_message(room=room,message_packet={ "nickname": st.session_state.nickname, 
                                                        "text": f"**{pgname}** rolled {result} ; Dices: {resdices_str}" }
@@ -242,7 +231,7 @@ def render_sheet(room, pgname):
                     }
                     """,
             ):
-                st.checkbox("+1d6", label_visibility="visible", key="bet_trait", help="+1d6 al tiro (se smarchi un utilizzo o spendi 1 Jolly)",
+                st.checkbox("+1d10", label_visibility="visible", key="bet_trait", help="+1d10 al tiro (se smarchi un utilizzo o spendi 1 Jolly)",
                             value= gettraitvalue(f"bet_trait") , on_change= updatetraitvalue)
         for i in range(6):
             
@@ -278,7 +267,7 @@ def render_sheet(room, pgname):
                     }
                     """,
             ):
-                st.checkbox("+1d6", label_visibility="visible", key="bet_resource", help="+1d6 al tiro (se smarchi un utilizzo)",
+                st.checkbox("+1d10", label_visibility="visible", key="bet_resource", help="+1d10 al tiro (se smarchi un utilizzo)",
                             value= gettraitvalue(f"bet_resource") , on_change= updatetraitvalue)
         for i in range(6):
             col2_1, col2_2, col2_3, col2_4 , col2_5 = st.columns([7,1,1,1,1])
@@ -319,7 +308,7 @@ def render_sheet(room, pgname):
                     }
                     """,
             ):
-                st.checkbox("+2d6 ", label_visibility="visible", key="bet_risk", help="+2d6 al tiro (ma se fallisci subisci 1 Ferita)",
+                st.checkbox("+1d10 ", label_visibility="visible", key="bet_risk", help="+1d10 al tiro (se fallisci subisci 1 Ferita, se hai successo ottieni +1 Jolly)",
                             value= gettraitvalue(f"bet_risk") , on_change= updatetraitvalue)
 
         st.subheader("Ferite")

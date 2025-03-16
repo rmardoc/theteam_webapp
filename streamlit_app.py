@@ -138,9 +138,9 @@ def main():
             downloadjson_helpmsg='''
                 Download selected room.  
                 Rooms will be automatically removed from  
-                the website when server reboots after few  
-                days of inactivity. Download your room so  
-                you can reupload it later.
+                the website when server go in sleep mode   
+                after 30 min of inactivity. Download your  
+                room so you can reupload it later.
                 '''
             st.sidebar.download_button(":material/download: Download room", use_container_width=True,
                               help=downloadjson_helpmsg, 
