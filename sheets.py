@@ -204,7 +204,7 @@ def render_diceroller(room , pgname ):
     
     
     with stylable_container(
-        key="container_with_redbgcolor",
+        key="container_with_redbgcolor1",
         css_styles="""
             {
                 vertical-align: middle;
@@ -301,7 +301,7 @@ def render_sheet(room, pgname ):
             st.markdown("### Tratti")
         with col1a_2:
             with stylable_container(
-                key="container_with_redbgcolor",
+                key="container_with_redbgcolor2",
                 css_styles="""
                     {
                         vertical-align: middle;
@@ -337,7 +337,7 @@ def render_sheet(room, pgname ):
             st.markdown("### Risorse")
         with col3a_2:
             with stylable_container(
-                key="container_with_redbgcolor",
+                key="container_with_redbgcolor3",
                 css_styles="""
                     {
                         vertical-align: middle;
@@ -380,7 +380,7 @@ def render_sheet(room, pgname ):
             pass
         with col5a_2:
             with stylable_container(
-                key="container_with_redbgcolor",
+                key="container_with_redbgcolor4",
                 css_styles="""
                     {
                         text-align: center;
@@ -399,7 +399,7 @@ def render_sheet(room, pgname ):
             pass
         with col5b_2:
             with stylable_container(
-                key="container_with_redbgcolor",
+                key="container_with_redbgcolor5",
                 css_styles="""
                     {
                         text-align: center;
