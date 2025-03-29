@@ -1,3 +1,5 @@
-streamlit==1.37.1
-streamlit-server-state
-streamlit-extras
+Markdown==3.6
+SQLAlchemy==2.0.40
+streamlit==1.43.0
+streamlit_extras==0.6.0
+~treamlit==1.43.2
