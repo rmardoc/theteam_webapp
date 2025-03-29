@@ -1,7 +1,7 @@
 import streamlit as st
 from sqlalchemy.sql import text
-
-conn = st.connection("postgresql", type="sql")
+import settings
+#conn = st.connection("postgresql", type="sql")
 
 def create_tables():
     # Insert some data with conn.session.
