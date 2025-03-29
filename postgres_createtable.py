@@ -5,7 +5,7 @@ import settings
 
 def create_tables():
     # Insert some data with conn.session.
-    with conn.session as s:
+    with settings.conn.session as s:
         # Creazione della tabella "messages"
         s.execute(text('''
             CREATE TABLE IF NOT EXISTS messages (
@@ -107,13 +107,13 @@ def create_tables():
 
 
 def sqlgetrooms():
-    dfrooms = conn.query('SELECT roomID, RoomName FROM rooms;', ttl="0m")
+    dfrooms = settings.conn.query('SELECT roomID, RoomName FROM rooms;', ttl="0m")
     return dfrooms
 
 def sqlgetpgs(room ):
     dfrooms = sqlgetrooms()
     roomid = dfrooms[dfrooms["roomname"] == room]["roomid"].item()
-    dfpgs = conn.query('SELECT pgID, pgName, roomID FROM pg WHERE roomid = :roomID;', 
+    dfpgs = settings.conn.query('SELECT pgID, pgName, roomID FROM pg WHERE roomid = :roomID;', 
                                 params={'roomID': roomid}, 
                                 ttl="0m")
     return dfpgs.sort_values(by=['pgname'])
