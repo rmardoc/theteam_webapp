@@ -1,26 +1,53 @@
 import streamlit as st
-from streamlit_server_state import server_state, server_state_lock
+#from streamlit_server_state import server_state, server_state_lock
 from streamlit_extras.stylable_container import stylable_container
+import time
+import settings
+from sqlalchemy.sql import text
+from postgres_createtable import sqlgetrooms, sqlgetpgs
+
+def sqlgetmessages(room ):
+    dfrooms = sqlgetrooms()
+    roomid = dfrooms[dfrooms["roomname"] == room]["roomid"].item()
+    dfmsgs = settings.conn.query('SELECT roomID, nickname, text, time FROM messages WHERE roomid = :roomID;', 
+                                params={'roomID': roomid}, 
+                                ttl="0m")
+    return dfmsgs
 
 
-def add_message(room, message_packet):
-    with server_state_lock["rooms"]:
-        server_state["rooms"][room]['messages'].append( message_packet )
+def sqladdmessages(room , message_packet = None):
+    dfrooms = sqlgetrooms()
+    roomid = dfrooms[dfrooms["roomname"] == room]["roomid"].item()
+    with settings.conn.session as s:
+        s.execute(
+            text('INSERT INTO messages (roomID, nickname, text, time) VALUES (:roomID, :nickname, :text, :time );'),
+                  params={'roomID': roomid, 
+                          'nickname': message_packet['nickname'], 
+                          'text': message_packet['text'] , 
+                          'time': message_packet['time']})
+        s.commit()    
+    st.write("")
 
-def chat(room, nickname):
+def render_chat(room , nickname ):
 
     #room_key = f"room_{room}"
     
     ## main frame functions
-    def on_message_input():
-        new_message_text = st.session_state[message_input_key]
-        if not new_message_text:
+    def on_message_input(text, room=room, nickname=nickname):
+        #new_message_text = st.session_state[message_input_key]
+        if not text:
             return
         new_message_packet = {
             "nickname": nickname,
-            "text": new_message_text,
+            "text": text,
+            "time": time.strftime("%Y%m%d %H:%M:%S")
         }
-        add_message(room= room, message_packet= new_message_packet)
+        sqladdmessages(room= room, message_packet= new_message_packet)
+        st.session_state["messages_updated"] = True  
+        #st.session_state.messagesdf = sqlgetmessages(room)
+        #st.write("")
+        
+        
     
     
     
@@ -81,6 +108,8 @@ def chat(room, nickname):
     
     
     ## mainframe show chat
+
+    
     with stylable_container(
             key="container_with_nouppermargin",
             css_styles="""
@@ -95,24 +124,36 @@ def chat(room, nickname):
                 """,
         ):
         st.markdown("Chat:")
+    
     with st.container(height=300):
         with st.form("chatmessage", clear_on_submit=True, border=False):
             chat_col1 , chat_col2, = st.columns([8,1])
             ## mainframe define message
             with chat_col1:
-                message_input_key = f"message_input_{room}"
-                st.text_input("Message", label_visibility="collapsed", key=message_input_key )
+                #message_input_key = f"message_input_{room}"
+                st.text_input("Message", label_visibility="collapsed", key="message_input" )
             with chat_col2:
-                st.form_submit_button("Send", on_click=on_message_input)
+                if st.form_submit_button("Send"):
+                    on_message_input(st.session_state.message_input, room, nickname)
+                #st.form_submit_button("Send", on_click=on_message_input, 
+                #                      kwargs={'room': room , 'text': st.session_state.message_input, 'nickname' : nickname })
             
     
         st.markdown('<div class="fixed-bottom">', unsafe_allow_html=True)
-        for elem in  reversed(server_state["rooms"][room]['messages'] ): 
-            st.markdown(f"**[{elem['nickname']}]** : {elem['text']}")
+        #st.markdown( f"messagestring: {sqlgetmessages(room ).to_string()}" )
+        messagesdf = sqlgetmessages(room)
+        if not messagesdf.empty:
+            #st.markdown(f" messagedf:  {messagesdf}  ")
+            for index, elem in messagesdf.sort_values(by=['time'], ascending=False).iterrows():
+                #for elem in messagesdf.iterrows(): 
+                #pass
+                st.markdown(f"{elem['time']} **[{elem['nickname']}]** : {elem['text']}")
         st.markdown('</div>', unsafe_allow_html=True)
 
 
 
+
+##TODO: try stateful chat: https://arnaudmiribel.github.io/streamlit-extras/extras/stateful_chat/
 
 if __name__ == "__main__":
     main()

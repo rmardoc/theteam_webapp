@@ -1,8 +1,7 @@
 import streamlit as st
 import random
-from streamlit_server_state import server_state, server_state_lock
+#from streamlit_server_state import server_state, server_state_lock
 from streamlit_extras.stylable_container import stylable_container
-from chat import add_message
 import markdown
 
     
